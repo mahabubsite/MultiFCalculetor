@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en" class="dark"> <!-- Start in dark mode by default -->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Functional Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'dark-bg': '#1a1b1e',
+                        'dark-surface': '#2c2d30',
+                        'dark-surface-hover': '#3a3b3e',
+                        'dark-accent': '#f2a23c',
+                        'dark-text-primary': '#f0f2f5',
+                        'dark-text-secondary': '#b0b3b8',
+                        'light-bg': '#f0f2f5',
+                        'light-surface': '#ffffff',
+                        'light-surface-hover': '#e4e6eb',
+                        'light-accent': '#f57c00',
+                        'light-text-primary': '#050505',
+                        'light-text-secondary': '#65676b',
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 8px; }
+        .dark ::-webkit-scrollbar-track { background: #2c2d30; }
+        .light ::-webkit-scrollbar-track { background: #e4e6eb; }
+        ::-webkit-scrollbar-thumb { background: #525355; border-radius: 4px; }
+        .light ::-webkit-scrollbar-thumb { background: #b0b3b8; }
+        .hidden { display: none !important; }
+        html, body { height: 100%; margin: 0; font-family: 'Inter', sans-serif; }
+        body { background-color: #f0f2f5; }
+        .dark body { background-color: #1a1b1e; }
+        input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.5) brightness(1); }
+        .dark input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1) brightness(0.7) sepia(1) hue-rotate(10deg) saturate(5); }
+        .segment-active { background-color: #f2a23c; color: white; }
+
+        /* --- Page Transition Animations --- */
+        #main-content { position: relative; }
+        .view-content {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        @keyframes slideInFromRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
+        @keyframes slideOutToLeft { from { transform: translateX(0); } to { transform: translateX(-100%); } }
+        @keyframes slideInFromLeft { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+        @keyframes slideOutToRight { from { transform: translateX(0); } to { transform: translateX(100%); } }
+
+        .slide-in-right { animation: slideInFromRight 0.3s forwards; }
+        .slide-out-left { animation: slideOutToLeft 0.3s forwards; }
+        .slide-in-left { animation: slideInFromLeft 0.3s forwards; }
+        .slide-out-right { animation: slideOutToRight 0.3s forwards; }
+    </style>
+</head>
+<body class="bg-light-bg dark:bg-dark-bg text-light-text-primary dark:text-dark-text-primary transition-colors duration-300">
+
+    <div id="app" class="h-screen w-full bg-light-bg dark:bg-dark-bg font-sans flex flex-col max-w-md mx-auto overflow-hidden">
+        <!-- Header -->
+        <header class="flex justify-between items-center p-2 bg-light-bg dark:bg-dark-bg border-b border-gray-200 dark:border-gray-700/50 flex-shrink-0 z-10">
+            <button id="back-btn" class="p-2 rounded-lg hidden">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            </button>
+            <h1 id="view-title" class="text-xl font-bold hidden"></h1>
+            <div id="main-nav" class="flex justify-around items-center w-full">
+                <button id="theme-toggle" class="p-2 rounded-lg" aria-label="Toggle Theme">
+                    <svg id="theme-icon-sun" class="hidden" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                    <svg id="theme-icon-moon" class="hidden" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                </button>
+                <button data-view="calculator" class="nav-btn p-2 rounded-lg"></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="8" y1="2" x2="8" y2="4"></line><line x1="16" y1="2" x2="16" y2="4"></line><line x1="21" y1="10" x2="3" y2="10"></line><line x1="7" y1="15" x2="7.01" y2="15"></line><line x1="12" y1="15" x2="12.01" y2="15"></line><line x1="17" y1="15" x2="17.01" y2="15"></line></svg>
+                </button>
+                <button data-view="converters" class="nav-btn p-2 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                </button>
+                <button data-view="history" class="nav-btn p-2 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"></path><path d="M3.51 15a9 9 0 1 0 2.19-9.51L1 10"></path></svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main id="main-content" class="flex-grow overflow-hidden"></main>
+    </div>
+
+    <script>
+    (() => {
+        // --- STATE & CONSTANTS ---
+        const state = {
+            currentView: null,
+            previousView: null,
+            calculator: { display: '0', expression: '', memory: 0, isResult: false, mode: 'standard' },
+            history: [],
+            theme: 'dark'
+        };
+
+        const DOM = { mainContent: document.getElementById('main-content') };
+
+        // --- DATA ---
+        const converterData = {
+            'area': { title: 'Area', base: 'm2', units: { 'm²': 1, 'km²': 1e6, 'ft²': 0.092903, 'acre': 4046.86 } },
+            'length': { title: 'Length', base: 'm', units: { 'm': 1, 'km': 1000, 'mi': 1609.34, 'ft': 0.3048, 'in': 0.0254 } },
+            'mass': { title: 'Mass', base: 'kg', units: { 'kg': 1, 'g': 0.001, 'lb': 0.453592, 'oz': 0.0283495 } },
+            'speed': { title: 'Speed', base: 'm/s', units: { 'm/s': 1, 'km/h': 0.277778, 'mph': 0.44704 } },
+            'temperature': { title: 'Temperature', units: { 'Celsius (°C)': 'C', 'Fahrenheit (°F)': 'F', 'Kelvin (K)': 'K' } },
+            'time': { title: 'Time', base: 's', units: { 's': 1, 'min': 60, 'h': 3600, 'day': 86400 } },
+            'volume': { title: 'Volume', base: 'l', units: { 'L': 1, 'mL': 0.001, 'gal (US)': 3.78541, 'm³': 1000 } },
+            'data': { title: 'Data', base: 'B', units: { 'B': 1, 'KB': 1024, 'MB': 1024**2, 'GB': 1024**3, 'TB': 1024**4 } }
+        };
+        const exchangeRates = {
+            'USD': 1.0, 'EUR': 0.93, 'JPY': 157.42, 'GBP': 0.79, 'AUD': 1.51, 'CAD': 1.37, 'CHF': 0.90, 'CNY': 7.25, 'INR': 83.54, 'BDT': 117.48,
+            'AED': 3.67, 'ARS': 903.6, 'BRL': 5.43, 'CLP': 941.5, 'CZK': 23.15, 'DKK': 6.96, 'HKD': 7.81, 'HUF': 369.3, 'IDR': 16435.0,
+            'ILS': 3.74, 'KRW': 1388.5, 'MXN': 18.38, 'MYR': 4.72, 'NOK': 10.61, 'NZD': 1.63, 'PHP': 58.75, 'PLN': 4.02, 'RUB': 88.2,
+            'SAR': 3.75, 'SEK': 10.51, 'SGD': 1.35, 'THB': 36.73, 'TRY': 32.83, 'TWD': 32.37, 'UAH': 40.52, 'VND': 25455.0, 'ZAR': 18.24
+        };
+
+        // --- TEMPLATE & RENDER FUNCTIONS ---
+        function createViewElement(viewId) {
+            const viewContentFactory = {
+                'calculator': getCalculatorHTML, 'converters': getConverterHubHTML, 'history': getHistoryHTML,
+                'age': getAgeHTML, 'numeral': getNumeralHTML, 'currency': getCurrencyHTML,
+                'bmi': getBmiHTML, 'discount': getDiscountHTML, 'date': getDateHTML,
+            };
+            
+            let html = viewId.startsWith('generic-') ? getGenericConverterHTML(viewId) : viewContentFactory[viewId] ? viewContentFactory[viewId]() : '';
+            const newView = document.createElement('div');
+            newView.id = `view-${viewId}`;
+            newView.className = 'view-content';
+            newView.innerHTML = html;
+            return newView;
+        }
+
+        function getCalculatorHTML() {
+            return `<div class="flex flex-col h-full p-2 sm:p-4">
+                <div class="flex-shrink-0 mb-2 p-1 bg-light-surface dark:bg-dark-surface rounded-full self-center text-sm">
+                    <button id="calc-mode-standard" class="px-4 py-1 rounded-full">Standard</button>
+                    <button id="calc-mode-scientific" class="px-4 py-1 rounded-full">Scientific</button>
+                </div>
+                <div class="flex-grow flex flex-col justify-end text-right mb-2">
+                    <div id="calculator-expression" class="text-light-text-secondary dark:text-dark-text-secondary text-xl sm:text-2xl break-all h-8"></div>
+                    <div id="calculator-display" class="text-4xl sm:text-6xl font-bold break-all">0</div>
+                </div>
+                <div id="calculator-buttons" class="grid gap-2"></div>
+            </div>`;
+        }
+        function getConverterHubHTML() {
+            const converters = [
+                { id: 'age', label: 'Age', icon: '🎂' }, { id: 'date', label: 'Date', icon: '📅' },
+                { id: 'currency', label: 'Currency', icon: '💲' }, { id: 'discount', label: 'Discount', icon: '🏷️' },
+                { id: 'numeral', label: 'Numeral', icon: '🔢' }, { id: 'bmi', label: 'BMI', icon: '💪' },
+                { id: 'generic-area', label: 'Area', icon: '🏞️' }, { id: 'generic-data', label: 'Data', icon: '💾' },
+                { id: 'generic-length', label: 'Length', icon: '📏' }, { id: 'generic-mass', label: 'Mass', icon: '⚖️' },
+                { id: 'generic-speed', label: 'Speed', icon: '🚀' }, { id: 'generic-temperature', label: 'Temperature', icon: '🌡️' },
+                { id: 'generic-time', label: 'Time', icon: '⏱️' }, { id: 'generic-volume', label: 'Volume', icon: '🧪' },
+            ];
+             return `<div class="p-4 h-full overflow-y-auto"><div class="grid grid-cols-3 sm:grid-cols-4 gap-4">${converters.map(c => `
+                <button data-view="${c.id}" class="nav-btn-direct flex flex-col items-center justify-center p-4 bg-light-surface dark:bg-dark-surface rounded-lg aspect-square hover:bg-light-surface-hover dark:hover:bg-dark-surface-hover transition-colors duration-200">
+                    <span class="text-3xl mb-2">${c.icon}</span>
+                    <span class="text-sm text-center">${c.label}</span>
+                </button>
+            `).join('')}</div></div>`;
+        }
+        function getHistoryHTML() {
+             return `<div class="p-4 h-full flex flex-col">
+                <div class="flex justify-between items-center mb-4">
+                    <h1 class="text-2xl font-bold">History</h1>
+                    <button id="clear-history-btn" class="text-light-accent dark:text-dark-accent hover:underline hidden">Clear</button>
+                </div>
+                <div id="history-list-container" class="flex-grow overflow-y-auto"></div>
+            </div>`;
+        }
+        function getAgeHTML() {
+            return `<div class="p-4 h-full overflow-y-auto space-y-4">
+                <div class="bg-light-surface dark:bg-dark-surface p-3 rounded-lg">
+                    <label class="text-sm text-light-text-secondary dark:text-dark-text-secondary">Date of Birth</label>
+                    <input id="age-birth-date" type="date" value="2010-08-16" class="w-full bg-transparent text-light-accent dark:text-dark-accent font-semibold focus:outline-none mt-1" />
+                </div>
+                <div class="bg-light-surface dark:bg-dark-surface p-3 rounded-lg">
+                    <label class="text-sm text-light-text-secondary dark:text-dark-text-secondary">Today</label>
+                    <input id="age-today-date" type="date" class="w-full bg-transparent text-light-accent dark:text-dark-accent font-semibold focus:outline-none mt-1" />
+                </div>
+                <div id="age-results" class="mt-2 space-y-4 hidden"></div>
+            </div>`;
+        }
+        function getNumeralHTML() {
+            return `<div class="p-4 h-full space-y-4">${['Decimal', 'Binary', 'Octal', 'Hexadecimal'].map(label => `
+                <div class="bg-light-surface dark:bg-dark-surface p-4 rounded-lg">
+                    <label class="text-sm text-light-text-secondary dark:text-dark-text-secondary">${label}</label>
+                    <input id="num-${label.toLowerCase().slice(0,3)}" type="text" data-base="${label.toLowerCase().slice(0,3)}" class="numeral-input w-full bg-transparent text-2xl font-semibold mt-1 focus:outline-none" placeholder="0">
+                </div>`).join('')}</div>`;
+        }
+        function getCurrencyHTML() {
+            return `<div class="p-4 h-full space-y-4">
+                <div class="bg-light-surface dark:bg-dark-surface p-4 rounded-lg flex items-center">
+                    <div class="flex-shrink-0 w-24">
+                        <select id="currency-from-select" class="w-full bg-transparent text-light-accent dark:text-dark-accent text-lg font-bold focus:outline-none"></select>
+                    </div>
+                    <input id="currency-from-amount" type="number" value="1" class="w-full bg-transparent text-3xl font-semibold text-right focus:outline-none" placeholder="0">
+                </div>
+                <div class="flex justify-center"><button id="currency-swap-btn" class="p-2 bg-gray-300 dark:bg-dark-surface rounded-full">⇅</button></div>
+                <div class="bg-light-surface dark:bg-dark-surface p-4 rounded-lg flex items-center">
+                    <div class="flex-shrink-0 w-24">
+                        <select id="currency-to-select" class="w-full bg-transparent text-light-accent dark:text-dark-accent text-lg font-bold focus:outline-none"></select>
+                    </div>
+                    <input id="currency-to-amount" type="text" readonly class="w-full bg-transparent text-3xl font-semibold text-right focus:outline-none" placeholder="0">
+                </div>
+                <p class="text-center text-gray-500 text-xs mt-4">Rates are approximate.</p>
+            </div>`;
+        }
+        function getGenericConverterHTML(viewId) {
+            const converterId = viewId.replace('generic-', '');
+            const data = converterData[converterId];
+            const units = Object.keys(data.units);
+            return `<div class="p-4 h-full overflow-y-auto space-y-4">
+                <div class="bg-light-surface dark:bg-dark-surface p-3 rounded-lg">
+                    <input id="generic-from-amount" type="number" value="1" class="w-full bg-transparent text-2xl font-semibold focus:outline-none" placeholder="0">
+                    <select id="generic-from-unit" class="w-full bg-transparent text-light-accent dark:text-dark-accent mt-1 focus:outline-none">${units.map(u => `<option value="${data.units[u]}">${u}</option>`).join('')}</select>
+                </div>
+                <div class="flex justify-center text-2xl text-gray-500">↓</div>
+                <div class="bg-light-surface dark:bg-dark-surface p-3 rounded-lg">
+                    <div id="generic-to-amount" class="w-full text-2xl font-semibold"></div>
+                    <select id="generic-to-unit" class="w-full bg-transparent text-light-accent dark:text-dark-accent mt-1 focus:outline-none">${units.map(u => `<option value="${data.units[u]}">${u}</option>`).join('')}</select>
+                </div>
+            </div>`;
+        }
+        function getBmiHTML() {
+            return `<div class="p-4 h-full space-y-4">
+                <div class="bg-light-surface dark:bg-dark-surface p-3 rounded-lg">
+                    <label class="text-sm text-light-text-secondary dark:text-dark-text-secondary">Height (cm)</label>
+                    <input id="bmi-height" type="number" class="w-full bg-transparent text-xl font-semibold focus:outline-none mt-1" placeholder="0">
+                </div>
+                <div class="bg-light-surface dark:bg-dark-surface p-3 rounded-lg">
+                    <label class="text-sm text-light-text-secondary dark:text-dark-text-secondary">Weight (kg)</label>
+                    <input id="bmi-weight" type="number" class="w-full bg-transparent text-xl font-semibold focus:outline-none mt-1" placeholder="0">
+                </div>
+                <div id="bmi-result-container" class="mt-6 text-center hidden">
+                    <p class="text-light-text-secondary dark:text-dark-text-secondary">Your BMI</p>
+                    <p id="bmi-result-value" class="text-5xl font-bold my-2"></p>
+                    <p id="bmi-result-category" class="text-xl font-semibold"></p>
+                </div>
+            </div>`;
+        }
+        function getDiscountHTML() {
+            return `<div class="p-4 h-full space-y-4">
+                <div class="bg-light-surface dark:bg-dark-surface p-3 rounded-lg">
+                    <label class="text-sm text-light-text-secondary dark:text-dark-text-secondary">Original Price</label>
+                    <input id="discount-price" type="number" class="w-full bg-transparent text-xl font-semibold focus:outline-none mt-1" placeholder="0">
+                </div>
+                <div class="bg-light-surface dark:bg-dark-surface p-3 rounded-lg">
+                    <label class="text-sm text-light-text-secondary dark:text-dark-text-secondary">Discount (%)</label>
+                    <input id="discount-percent" type="number" class="w-full bg-transparent text-xl font-semibold focus:outline-none mt-1" placeholder="0">
+                </div>
+                 <div id="discount-result-container" class="mt-6 bg-light-surface dark:bg-dark-surface p-4 rounded-lg text-center hidden">
+                    <p class="text-light-text-secondary dark:text-dark-text-secondary">Final Price</p>
+                    <p id="discount-final-price" class="text-4xl font-bold my-1"></p>
+                    <p class="text-light-text-secondary dark:text-dark-text-secondary">You saved <span id="discount-saved" class="font-semibold"></span></p>
+                </div>
+            </div>`;
+        }
+        function getDateHTML() {
+            return `<div class="p-4 h-full overflow-y-auto space-y-4">
+                <div class="bg-light-surface dark:bg-dark-surface p-3 rounded-lg">
+                    <label class="text-sm text-light-text-secondary dark:text-dark-text-secondary">From</label>
+                    <input id="date-from" type="date" class="w-full bg-transparent text-light-accent dark:text-dark-accent font-semibold focus:outline-none mt-1" />
+                </div>
+                <div class="bg-light-surface dark:bg-dark-surface p-3 rounded-lg">
+                    <label class="text-sm text-light-text-secondary dark:text-dark-text-secondary">To</label>
+                    <input id="date-to" type="date" class="w-full bg-transparent text-light-accent dark:text-dark-accent font-semibold focus:outline-none mt-1" />
+                </div>
+                <div id="date-result" class="mt-6 bg-light-surface dark:bg-dark-surface p-4 rounded-lg text-center hidden"></div>
+            </div>`;
+        }
+
+
+        // --- NAVIGATION & VIEW MANAGEMENT ---
+        function switchView(viewId, isBack = false) {
+            const currentViewEl = DOM.mainContent.querySelector('.view-content');
+            
+            if (currentViewEl) {
+                const outClass = isBack ? 'slide-out-right' : 'slide-out-left';
+                currentViewEl.classList.add(outClass);
+                currentViewEl.addEventListener('animationend', () => {
+                    currentViewEl.remove();
+                }, { once: true });
+            }
+            
+            if (!isBack) {
+                state.previousView = state.currentView;
+            }
+            state.currentView = viewId;
+
+            const isSubView = !['calculator', 'converters', 'history'].includes(viewId);
+            DOM.mainNav.classList.toggle('hidden', isSubView);
+            DOM.backBtn.classList.toggle('hidden', !isSubView);
+            DOM.viewTitle.classList.toggle('hidden', !isSubView);
+            
+            if(isSubView) {
+                const converterId = viewId.replace('generic-', '');
+                const title = converterData[converterId]?.title || converterId.charAt(0).toUpperCase() + converterId.slice(1);
+                DOM.viewTitle.textContent = title;
+            }
+            
+            DOM.navButtons.forEach(btn => {
+                const isSelected = btn.dataset.view === state.currentView;
+                btn.classList.toggle('text-light-accent', isSelected && state.theme === 'light');
+                btn.classList.toggle('text-dark-accent', isSelected && state.theme === 'dark');
+                btn.classList.toggle('text-gray-500', !isSelected);
+                btn.classList.toggle('dark:text-dark-text-secondary', !isSelected);
+            });
+
+            const newViewEl = createViewElement(viewId);
+            const inClass = isBack ? 'slide-in-left' : 'slide-in-right';
+            newViewEl.classList.add(inClass);
+            DOM.mainContent.appendChild(newViewEl);
+
+            bindViewSpecificDOM(viewId);
+            bindViewSpecificEvents(viewId);
+
+            newViewEl.addEventListener('animationend', () => {
+                newViewEl.classList.remove(inClass);
+            }, { once: true });
+        }
+
+        // --- BINDING & EVENT LISTENERS ---
+        function bindGlobalDOM() {
+            Object.assign(DOM, {
+                html: document.documentElement, mainNav: document.getElementById('main-nav'),
+                backBtn: document.getElementById('back-btn'), viewTitle: document.getElementById('view-title'),
+                navButtons: document.querySelectorAll('.nav-btn'), themeToggle: document.getElementById('theme-toggle'),
+                themeIconSun: document.getElementById('theme-icon-sun'), themeIconMoon: document.getElementById('theme-icon-moon')
+            });
+        }
+        function bindViewSpecificDOM(viewId) {
+            const container = document.getElementById(`view-${viewId}`);
+            if (!container) return;
+            if (viewId === 'calculator') Object.assign(DOM, { calcModeStandard: container.querySelector('#calc-mode-standard'), calcModeScientific: container.querySelector('#calc-mode-scientific'), calculatorExpression: container.querySelector('#calculator-expression'), calculatorDisplay: container.querySelector('#calculator-display'), calculatorButtons: container.querySelector('#calculator-buttons') });
+            else if (viewId === 'history') Object.assign(DOM, { clearHistoryBtn: container.querySelector('#clear-history-btn'), historyListContainer: container.querySelector('#history-list-container') });
+            else if (viewId === 'age') Object.assign(DOM, { ageBirthDate: container.querySelector('#age-birth-date'), ageTodayDate: container.querySelector('#age-today-date'), ageResults: container.querySelector('#age-results') });
+            else if (viewId === 'numeral') DOM.numeralInputs = container.querySelectorAll('.numeral-input');
+            else if (viewId === 'currency') Object.assign(DOM, { currencyFromSelect: container.querySelector('#currency-from-select'), currencyToSelect: container.querySelector('#currency-to-select'), currencyFromAmount: container.querySelector('#currency-from-amount'), currencyToAmount: container.querySelector('#currency-to-amount'), currencySwapBtn: container.querySelector('#currency-swap-btn') });
+            else if (viewId.startsWith('generic-')) Object.assign(DOM, { genericFromAmount: container.querySelector('#generic-from-amount'), genericFromUnit: container.querySelector('#generic-from-unit'), genericToAmount: container.querySelector('#generic-to-amount'), genericToUnit: container.querySelector('#generic-to-unit') });
+            else if (viewId === 'bmi') Object.assign(DOM, { bmiHeight: container.querySelector('#bmi-height'), bmiWeight: container.querySelector('#bmi-weight'), bmiResultContainer: container.querySelector('#bmi-result-container'), bmiResultValue: container.querySelector('#bmi-result-value'), bmiResultCategory: container.querySelector('#bmi-result-category') });
+            else if (viewId === 'discount') Object.assign(DOM, { discountPrice: container.querySelector('#discount-price'), discountPercent: container.querySelector('#discount-percent'), discountResultContainer: container.querySelector('#discount-result-container'), discountFinalPrice: container.querySelector('#discount-final-price'), discountSaved: container.querySelector('#discount-saved') });
+            else if (viewId === 'date') Object.assign(DOM, { dateFrom: container.querySelector('#date-from'), dateTo: container.querySelector('#date-to'), dateResult: container.querySelector('#date-result') });
+        }
+        function bindGlobalEvents() {
+            DOM.themeToggle.addEventListener('click', () => applyTheme(state.theme === 'light' ? 'dark' : 'light'));
+            DOM.navButtons.forEach(btn => btn.addEventListener('click', () => switchView(btn.dataset.view)));
+            DOM.backBtn.addEventListener('click', () => switchView(state.previousView || 'converters', true));
+        }
+        function bindViewSpecificEvents(viewId) {
+            const container = document.getElementById(`view-${viewId}`);
+            if (!container) return;
+            if (viewId === 'calculator') {
+                DOM.calcModeStandard.addEventListener('click', () => switchCalcMode('standard'));
+                DOM.calcModeScientific.addEventListener('click', () => switchCalcMode('scientific'));
+                switchCalcMode(state.calculator.mode);
+            } else if (viewId === 'converters') {
+                container.querySelectorAll('.nav-btn-direct').forEach(btn => btn.addEventListener('click', () => switchView(btn.dataset.view)));
+            } else if (viewId === 'history') {
+                DOM.clearHistoryBtn.addEventListener('click', () => {
+                    if (confirm('Are you sure you want to delete all history?')) {
+                         state.history = [];
+                         renderHistoryList();
+                    }
+                });
+                renderHistoryList();
+            } else if (viewId === 'age') {
+                DOM.ageTodayDate.value = new Date().toISOString().split('T')[0];
+                [DOM.ageBirthDate, DOM.ageTodayDate].forEach(el => el.addEventListener('change', calculateAge));
+                calculateAge();
+            } else if (viewId === 'numeral') {
+                DOM.numeralInputs.forEach(input => input.addEventListener('input', handleNumeralConversion));
+            } else if (viewId === 'currency') {
+                setupCurrencyConverter();
+                [DOM.currencyFromSelect, DOM.currencyToSelect, DOM.currencyFromAmount].forEach(el => el.addEventListener('input', convertCurrency));
+                DOM.currencySwapBtn.addEventListener('click', swapCurrencies);
+            } else if (viewId.startsWith('generic-')) {
+                [DOM.genericFromAmount, DOM.genericFromUnit, DOM.genericToUnit].forEach(el => el.addEventListener('input', convertUnits));
+                DOM.genericToUnit.selectedIndex = 1;
+                convertUnits();
+            } else if (viewId === 'bmi') {
+                [DOM.bmiHeight, DOM.bmiWeight].forEach(el => el.addEventListener('input', calculateBMI));
+            } else if (viewId === 'discount') {
+                [DOM.discountPrice, DOM.discountPercent].forEach(el => el.addEventListener('input', calculateDiscount));
+            } else if (viewId === 'date') {
+                const today = new Date();
+                DOM.dateTo.value = today.toISOString().split('T')[0];
+                today.setMonth(today.getMonth() - 1);
+                DOM.dateFrom.value = today.toISOString().split('T')[0];
+                [DOM.dateFrom, DOM.dateTo].forEach(el => el.addEventListener('change', calculateDateDifference));
+                calculateDateDifference();
+            }
+        }
+        
+        // --- LOGIC FUNCTIONS ---
+        function applyTheme(theme) { state.theme = theme; DOM.html.classList.toggle('dark', theme === 'dark'); DOM.themeIconSun.classList.toggle('hidden', theme === 'dark'); DOM.themeIconMoon.classList.toggle('hidden', theme !== 'dark'); localStorage.setItem('calculatorTheme', theme); }
+        function addHistory(item) { state.history.unshift(item); if (state.history.length > 50) state.history.pop(); }
+        function renderHistoryList() { if (!DOM.historyListContainer) return; DOM.clearHistoryBtn.classList.toggle('hidden', state.history.length === 0); DOM.historyListContainer.innerHTML = state.history.length === 0 ? `<p class="text-light-text-secondary dark:text-dark-text-secondary text-center mt-8">No history yet.</p>` : `<ul class="space-y-2 text-right">${state.history.map(item => { const [expr, result] = item.split('=').map(s => s.trim()); return `<li class="bg-light-surface dark:bg-dark-surface p-3 rounded-lg"><p class="text-light-text-secondary dark:text-dark-text-secondary text-sm break-words">${expr || ''}</p><p class="text-xl font-semibold break-words">${result ? `= ${result}` : ''}</p></li>`; }).join('')}</ul>`; }
+        function updateCalculatorDisplay() { DOM.calculatorDisplay.textContent = state.calculator.display; DOM.calculatorExpression.textContent = state.calculator.expression; }
+        function handleCalculatorInput(value) { if (state.calculator.display === 'Error') clearCalculator(); if (state.calculator.isResult) { state.calculator.expression = (/[+\-*/^%]/).test(value) ? state.calculator.display : ''; state.calculator.display = (/[+\-*/^%]/).test(value) ? state.calculator.display : ''; state.calculator.isResult = false; } if (state.calculator.display === '0' && value !== '.') state.calculator.display = ''; state.calculator.display += value; state.calculator.expression += value; updateCalculatorDisplay(); }
+        function handleScientificFunction(func) { handleCalculatorInput(`${func}(`); }
+        function clearCalculator() { state.calculator.display = '0'; state.calculator.expression = ''; state.calculator.isResult = false; updateCalculatorDisplay(); }
+        function calculateResult() { try { let expr = state.calculator.expression.replace(/%/g, '/100').replace(/\^/g, '**').replace(/√/g, 'Math.sqrt').replace(/sin/g, 'Math.sin').replace(/cos/g, 'Math.cos').replace(/tan/g, 'Math.tan').replace(/log/g, 'Math.log10').replace(/ln/g, 'Math.log').replace(/π/g, 'Math.PI').replace(/e/g, 'Math.E'); expr = expr.replace(/(Math.sin|Math.cos|Math.tan)\(([^)]+)\)/g, (m, f, v) => `${f}(${v} * Math.PI / 180)`); const result = new Function(`return ${expr}`)(); if (isNaN(result) || !isFinite(result)) throw new Error(); const resultStr = parseFloat(result.toPrecision(12)).toString(); addHistory(`${state.calculator.expression} = ${resultStr}`); state.calculator.display = resultStr; state.calculator.expression += ` = ${resultStr}`; state.calculator.isResult = true; } catch (error) { state.calculator.display = 'Error'; state.calculator.expression = ''; } updateCalculatorDisplay(); }
+        function switchCalcMode(mode) { state.calculator.mode = mode; DOM.calcModeStandard.classList.toggle('segment-active', mode === 'standard'); DOM.calcModeScientific.classList.toggle('segment-active', mode === 'scientific'); setupCalculatorButtons(); }
+        function setupCalculatorButtons() { const btn = (l, a, c = '') => ({ l, a, c }); const op = (val) => btn(val, () => handleCalculatorInput(val), 'text-light-accent dark:text-dark-accent'); const num = (val) => btn(val, () => handleCalculatorInput(val)); const sci = (val) => btn(val, () => handleScientificFunction(val), 'text-light-accent dark:text-dark-accent'); const standard = [ btn('C', clearCalculator, 'text-red-500'), num('('), num(')'), op('/'), num('7'), num('8'), num('9'), op('*'), num('4'), num('5'), num('6'), op('-'), num('1'), num('2'), num('3'), op('+'), btn('0', () => handleCalculatorInput('0'), 'col-span-2'), num('.'), btn('=', calculateResult, 'bg-light-accent dark:bg-dark-accent text-white') ]; const scientific = [ sci('sin'), sci('cos'), sci('tan'), op('%'), sci('log'), sci('ln'), sci('√'), op('^'), num('π'), num('e'), btn('MR', ()=>{}), btn('MC', ()=>{}) ]; const buttons = state.calculator.mode === 'scientific' ? [...scientific, ...standard] : standard; DOM.calculatorButtons.className = `grid gap-2 text-2xl grid-cols-4`; DOM.calculatorButtons.innerHTML = buttons.map(b => `<button class="flex justify-center items-center h-16 rounded-2xl bg-light-surface dark:bg-dark-surface hover:bg-light-surface-hover dark:hover:bg-dark-surface-hover transition-colors duration-200 ${b.c}">${b.l}</button>`).join(''); DOM.calculatorButtons.querySelectorAll('button').forEach((el, i) => el.addEventListener('click', buttons[i].a)); }
+        function formatNumber(num) { return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
+        function calculateAge() { const start = new Date(DOM.ageBirthDate.value); const end = new Date(DOM.ageTodayDate.value); if (isNaN(start) || isNaN(end) || start > end) { DOM.ageResults.classList.add('hidden'); return; } let years = end.getFullYear() - start.getFullYear(); let months = end.getMonth() - start.getMonth(); let days = end.getDate() - start.getDate(); if (days < 0) { months--; days += new Date(end.getFullYear(), end.getMonth(), 0).getDate(); } if (months < 0) { years--; months += 12; } const diffMs = end - start; const totalDays = Math.floor(diffMs / 864e5); const totalMonths = years * 12 + months; const totalWeeks = Math.floor(totalDays / 7); const totalHours = totalDays * 24; const totalMinutes = totalHours * 60; DOM.ageResults.innerHTML = `<div class="bg-light-surface dark:bg-dark-surface p-4 rounded-lg text-center"><p class="text-sm text-light-text-secondary dark:text-dark-text-secondary">Your Age</p><p class="text-2xl font-bold">${years} <span class="text-base font-normal">Y</span> ${months} <span class="text-base font-normal">M</span> ${days} <span class="text-base font-normal">D</span></p></div><div class="bg-light-surface dark:bg-dark-surface p-4 rounded-lg"><h3 class="text-lg font-bold mb-3 text-center text-light-accent dark:text-dark-accent">Summary</h3><div class="grid grid-cols-3 gap-4 text-center"><div><p class="text-2xl font-semibold">${formatNumber(years)}</p><p class="text-xs text-light-text-secondary dark:text-dark-text-secondary">Years</p></div><div><p class="text-2xl font-semibold">${formatNumber(totalMonths)}</p><p class="text-xs text-light-text-secondary dark:text-dark-text-secondary">Months</p></div><div><p class="text-2xl font-semibold">${formatNumber(totalWeeks)}</p><p class="text-xs text-light-text-secondary dark:text-dark-text-secondary">Weeks</p></div><div><p class="text-2xl font-semibold">${formatNumber(totalDays)}</p><p class="text-xs text-light-text-secondary dark:text-dark-text-secondary">Days</p></div><div><p class="text-2xl font-semibold">${formatNumber(totalHours)}</p><p class="text-xs text-light-text-secondary dark:text-dark-text-secondary">Hours</p></div><div><p class="text-2xl font-semibold">${formatNumber(totalMinutes)}</p><p class="text-xs text-light-text-secondary dark:text-dark-text-secondary">Minutes</p></div></div></div>`; DOM.ageResults.classList.remove('hidden'); }
+        function handleNumeralConversion(e) { const { value, dataset: { base } } = e.target; if (value === '') { DOM.numeralInputs.forEach(inp => inp.value = ''); return; } const decValue = parseInt(value, { dec: 10, bin: 2, oct: 8, hex: 16 }[base]); if (isNaN(decValue)) return; DOM.numeralInputs.forEach(inp => { const targetBase = inp.dataset.base; inp.value = decValue.toString({ dec: 10, bin: 2, oct: 8, hex: 16 }[targetBase]).toUpperCase(); }); }
+        function setupCurrencyConverter() { const options = Object.keys(exchangeRates).sort().map(curr => `<option value="${curr}" class="bg-dark-surface text-white">${curr}</option>`).join(''); DOM.currencyFromSelect.innerHTML = options; DOM.currencyToSelect.innerHTML = options; DOM.currencyFromSelect.value = 'USD'; DOM.currencyToSelect.value = 'BDT'; convertCurrency(); }
+        function convertCurrency() { const fromAmount = parseFloat(DOM.currencyFromAmount.value); if (isNaN(fromAmount)) { DOM.currencyToAmount.value = ''; return; } const fromRate = exchangeRates[DOM.currencyFromSelect.value]; const toRate = exchangeRates[DOM.currencyToSelect.value]; const convertedAmount = (fromAmount / fromRate) * toRate; DOM.currencyToAmount.value = convertedAmount.toFixed(2); }
+        function swapCurrencies() { [DOM.currencyFromSelect.value, DOM.currencyToSelect.value] = [DOM.currencyToSelect.value, DOM.currencyFromSelect.value]; convertCurrency(); }
+        function convertUnits() { const converterId = state.currentView.replace('generic-', ''); const data = converterData[converterId]; const fromAmount = parseFloat(DOM.genericFromAmount.value); if (isNaN(fromAmount)) { DOM.genericToAmount.textContent = ''; return; } const fromUnit = DOM.genericFromUnit.value; const toUnit = DOM.genericToUnit.value; let result; if (converterId === 'temperature') { if (fromUnit === toUnit) result = fromAmount; else if (fromUnit === 'C' && toUnit === 'F') result = fromAmount * 9/5 + 32; else if (fromUnit === 'F' && toUnit === 'C') result = (fromAmount - 32) * 5/9; else if (fromUnit === 'C' && toUnit === 'K') result = fromAmount + 273.15; else if (fromUnit === 'K' && toUnit === 'C') result = fromAmount - 273.15; else if (fromUnit === 'F' && toUnit === 'K') result = (fromAmount - 32) * 5/9 + 273.15; else if (fromUnit === 'K' && toUnit === 'F') result = (fromAmount - 273.15) * 9/5 + 32; } else { const fromToBase = fromAmount * parseFloat(fromUnit); const toUnitValue = parseFloat(toUnit); result = fromToBase / toUnitValue; } DOM.genericToAmount.textContent = parseFloat(result.toPrecision(6)).toString(); }
+        function calculateBMI() { const height = parseFloat(DOM.bmiHeight.value); const weight = parseFloat(DOM.bmiWeight.value); if (!height || !weight || height <= 0 || weight <= 0) { DOM.bmiResultContainer.classList.add('hidden'); return; } const heightInMeters = height / 100; const bmi = weight / (heightInMeters * heightInMeters); const bmiValue = bmi.toFixed(1); let category = '', colorClass = ''; if (bmi < 18.5) { category = 'Underweight'; colorClass = 'text-blue-400'; } else if (bmi < 25) { category = 'Normal'; colorClass = 'text-green-400'; } else if (bmi < 30) { category = 'Overweight'; colorClass = 'text-yellow-400'; } else { category = 'Obese'; colorClass = 'text-red-500'; } DOM.bmiResultValue.textContent = bmiValue; DOM.bmiResultCategory.textContent = category; DOM.bmiResultCategory.className = `text-xl font-semibold ${colorClass}`; DOM.bmiResultContainer.classList.remove('hidden'); }
+        function calculateDiscount() { const price = parseFloat(DOM.discountPrice.value); const percent = parseFloat(DOM.discountPercent.value); if (isNaN(price) || isNaN(percent)) { DOM.discountResultContainer.classList.add('hidden'); return; } const saved = price * (percent / 100); const finalPrice = price - saved; DOM.discountFinalPrice.textContent = finalPrice.toFixed(2); DOM.discountSaved.textContent = saved.toFixed(2); DOM.discountResultContainer.classList.remove('hidden'); }
+        function calculateDateDifference() { const start = new Date(DOM.dateFrom.value); const end = new Date(DOM.dateTo.value); if (isNaN(start) || isNaN(end)) { DOM.dateResult.classList.add('hidden'); return; } let years = end.getFullYear() - start.getFullYear(); let months = end.getMonth() - start.getMonth(); let days = end.getDate() - start.getDate(); if (days < 0) { months--; days += new Date(end.getFullYear(), end.getMonth(), 0).getDate(); } if (months < 0) { years--; months += 12; } DOM.dateResult.innerHTML = `<p class="text-sm text-light-text-secondary dark:text-dark-text-secondary">Difference</p><p class="text-2xl font-bold">${years} <span class="text-base font-normal">Y</span> ${months} <span class="text-base font-normal">M</span> ${days} <span class="text-base font-normal">D</span></p>`; DOM.dateResult.classList.remove('hidden'); }
+
+        // --- INITIALIZATION ---
+        function initialize() {
+            bindGlobalDOM();
+            bindGlobalEvents();
+            applyTheme(localStorage.getItem('calculatorTheme') || 'dark');
+            switchView('calculator');
+        }
+
+        document.addEventListener('DOMContentLoaded', initialize);
+    })();
+    </script>
+</body>
+</html>
+
